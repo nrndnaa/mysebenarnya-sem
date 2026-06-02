@@ -7,7 +7,9 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserProfileController;
 
 //1.Login
-
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 Route::get('/login', function () {
     return view('ManageUserUI.Login');
 })->name('login');
