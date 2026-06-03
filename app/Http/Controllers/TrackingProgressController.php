@@ -685,44 +685,66 @@ class TrackingProgressController extends Controller
         ]);
     }
 
-    public function p_ListAllInquiry(Request $request)
-    {
-        $userID = Auth::user()->UserID;
+   public function p_ListAllInquiry(Request $request)
+{
+    $userID = Auth::user()->UserID;
 
-        $statusFilter = $request->input('status'); // 'Under Investigation', etc.
-        $ownOnly = $request->input('own_only'); // 'on' if checked
+    // Ambil input dan pastikan bulan adalah integer
+    $search = $request->input('search'); 
+    $statusFilter = $request->input('status'); 
+    $month = $request->input('month');
+    $sort = $request->input('sort');
 
-        $query = DB::table('inquiry')
-            ->join('inquiryprogress', 'inquiry.InquiryID', '=', 'inquiryprogress.InquiryID')
-            ->select('inquiry.*', 'inquiryprogress.VerificationStatus', 'inquiryprogress.InvestigationBeginDate', 'inquiryprogress.VerificationDateTime')
-            ->where(function ($q) {
-                $q->whereNull('inquiryprogress.VerificationStatus')
-                    ->orWhere('inquiryprogress.VerificationStatus', '!=', 'Rejected'); // Exclude rejected
-            });
+    $query = DB::table('inquiry')
+        ->leftJoin('inquiryprogress', 'inquiry.InquiryID', '=', 'inquiryprogress.InquiryID')
+        ->select(
+            'inquiry.*', 
+            'inquiryprogress.VerificationStatus', 
+            'inquiryprogress.InvestigationBeginDate', 
+            'inquiryprogress.VerificationDateTime'
+        );
 
-        // ✅ Handle special logic for "Under Investigation"
-        if ($statusFilter === 'Under Investigation') {
-            $query->whereNotNull('inquiryprogress.InvestigationBeginDate')
-                ->whereNull('inquiryprogress.VerificationStatus')
-                ->whereNull('inquiryprogress.VerificationDateTime');
-        }
-        // ✅ Handle other statuses
-        elseif (in_array($statusFilter, ['Verified as True', 'Identified as Fake'])) {
-            $query->where('inquiryprogress.VerificationStatus', $statusFilter);
-        }
+    // 1. Penapisan Default: Buang yang ditolak secara terang-terangan
+    $query->where(function ($q) {
+        $q->whereNull('inquiryprogress.VerificationStatus')
+          ->orWhereRaw('LOWER(inquiryprogress.VerificationStatus) != ?', ['rejected']);
+    });
 
-        // ✅ Filter by own inquiries
-        if ($ownOnly) {
-            $query->join('publicuser', 'inquiry.PublicID', '=', 'publicuser.PublicID')
-                ->where('publicuser.UserID', $userID);
-        }
-
-        $inquiries = $query->get();
-
-        return view('InquiryProgressTrackingUI.Public.ListAllInquiryUI', [
-            'inquiries' => $inquiries,
-            'statusFilter' => $statusFilter,
-            'ownOnly' => $ownOnly
-        ]);
+    // 2. Logic Search (Case Insensitive)
+    if (!empty($search)) {
+        $query->where('inquiry.InquiryTitle', 'LIKE', '%' . $search . '%');
     }
+
+    // 3. Logic Bulan (Guna intval untuk elak ralat string '05')
+    if (!empty($month)) {
+        $query->whereMonth('inquiry.SubmissionDate', intval($month));
+    }
+
+    // 4. Logic Status yang lebih fleksibel
+    if ($statusFilter === 'Under Investigation') {
+        $query->whereNotNull('inquiryprogress.InvestigationBeginDate')
+              ->whereNull('inquiryprogress.VerificationStatus');
+    } elseif ($statusFilter === 'Verified as True') {
+        // Mencari "Verified as True" ATAU "verified" (huruf kecil)
+        $query->where(function($q) {
+            $q->where('inquiryprogress.VerificationStatus', 'Verified as True')
+              ->orWhere('inquiryprogress.VerificationStatus', 'verified');
+        });
+    } elseif ($statusFilter === 'Identified as Fake') {
+        $query->where('inquiryprogress.VerificationStatus', 'Identified as Fake');
+    }
+
+    // 5. Sorting
+    if ($sort === 'oldest') {
+        $query->orderBy('inquiry.SubmissionDate', 'asc');
+    } elseif ($sort === 'alphabetical') {
+        $query->orderBy('inquiry.InquiryTitle', 'asc');
+    } else {
+        $query->orderBy('inquiry.SubmissionDate', 'desc');
+    }
+
+    $inquiries = $query->paginate(10)->appends($request->all());
+
+    return view('InquiryProgressTrackingUI.Public.ListAllInquiryUI', compact('inquiries', 'statusFilter', 'search', 'month', 'sort'));
+}
 }
