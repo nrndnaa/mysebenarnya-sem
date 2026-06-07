@@ -18,43 +18,64 @@
         </p>
         <p><strong>Assigned Date:</strong> {{ $assignment->AssignDate }}</p>
 
-
-        <!-- Jurisdiction Review Section  -->
+        <!-- Jurisdiction Review Section -->
         <hr style="margin: 20px 0; border: 1px solid #e9ecef;">
         <h3 style="color: #333; margin-bottom: 15px; font-size: 20px;"><i class="fas fa-gavel"></i> Jurisdiction Review</h3>
         <p style="color: #666; margin-bottom: 20px;">Does this inquiry fall under your agency's scope? Accept if yes, or reject with reason if no.</p>
 
-        <form method="POST" action="{{ route('agency.inquiry.action', $assignment->AssignmentID) }}">
-            @csrf
+        @php
+            $progressStatus = $assignment->progress?->VerificationStatus ?? null;
+            $isReviewed = in_array($progressStatus, ['ACCEPTED', 'Verified as True', 'REJECTED', 'Identified as Fake']);
+        @endphp
+
+        @if(!$isReviewed)
             <div class="action-buttons">
-            <button type="button" class="btn-save" onclick="window.location.href='{{ route('progress.update.status', ['id' => $assignment->InquiryID]) }}'">
-                <i class="fas fa-check"></i> Accept
-            </button>
+                {{-- Accept Form --}}
+                <form method="POST" action="{{ route('agency.inquiry.action', $assignment->AssignmentID) }}" style="display:inline;">
+                    @csrf
+                    <button type="submit" name="action" value="accept" class="btn-save">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                </form>
+
+                {{-- Reject Button --}}
                 <button type="button" class="btn-next" onclick="showRejectForm()">
                     <i class="fas fa-times"></i> Reject Inquiry
                 </button>
             </div>
-        </form>
 
-        <!-- Reject Form Section - now inside the main card -->
-        <div class="reject-form-section" id="rejectForm">
-            <h4><i class="fas fa-times-circle"></i> Reject Inquiry</h4>
-            <form method="POST" action="{{ route('agency.inquiry.action', $assignment->AssignmentID) }}">
-                @csrf
-                <div class="form-group">
-                    <label for="jurisdictionComment">Reason for Rejection:</label>
-                    <textarea name="jurisdictionComment" id="jurisdictionComment" required placeholder="Please provide a detailed reason for rejecting this inquiry..."></textarea>
-                </div>
-                <div class="reject-form-buttons">
-                    <button type="button" class="btn-back" onclick="hideRejectForm()">
-                        <i class="fas fa-arrow-left"></i> Cancel
-                    </button>
-                    <button type="submit" name="action" value="reject" class="btn-save">
-                        <i class="fas fa-paper-plane"></i> Submit Rejection
-                    </button>
-                </div>
-            </form>
-        </div>
+            <!-- Reject Form Section -->
+            <div class="reject-form-section" id="rejectForm">
+                <h4><i class="fas fa-times-circle"></i> Reject Inquiry</h4>
+                <form method="POST" action="{{ route('agency.inquiry.action', $assignment->AssignmentID) }}">
+                    @csrf
+                    <div class="form-group">
+                        <label for="jurisdictionComment">Reason for Rejection:</label>
+                        <textarea name="jurisdictionComment" id="jurisdictionComment" required placeholder="Please provide a detailed reason for rejecting this inquiry..."></textarea>
+                    </div>
+                    <div class="reject-form-buttons">
+                        <button type="button" class="btn-back" onclick="hideRejectForm()">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn-save">
+                            <i class="fas fa-paper-plane"></i> Submit Rejection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        @else
+            <div style="margin-top:15px; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+                @if(in_array($progressStatus, ['ACCEPTED', 'Verified as True']))
+                    <span style="color:#0f5132; font-weight:600; font-size:16px;">
+                        <i class="fas fa-check-circle"></i> This inquiry has been Accepted.
+                    </span>
+                @else
+                    <span style="color:#842029; font-weight:600; font-size:16px;">
+                        <i class="fas fa-times-circle"></i> This inquiry has been Rejected.
+                    </span>
+                @endif
+            </div>
+        @endif
     </div>
 
     <div class="text-center mt-4">

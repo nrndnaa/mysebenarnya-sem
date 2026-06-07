@@ -36,10 +36,10 @@ class InquiryAssignment extends Model
         return $this->belongsTo(Inquiry::class, 'InquiryID', 'InquiryID');
     }
 
-    public function progress()
-    {
-        return $this->hasOne(InquiryProgress::class, 'InquiryID', 'InquiryID');
-    }
+public function progress()
+{
+    return $this->hasOne(InquiryProgress::class, 'AssignmentID', 'AssignmentID');
+}
 
     public function agency()
     {
