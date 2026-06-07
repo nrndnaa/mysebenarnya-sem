@@ -38,15 +38,7 @@
       <input type="password" name="Password" placeholder="Create Password" required />
       <input type="password" name="Password_confirmation" placeholder="Confirm Password" required />
 
-      <input
-  type="tel"
-  name="PhoneNum"
-  placeholder="Phone Number (optional)"
-  value="{{ old('PhoneNum') }}"
-  inputmode="numeric"
-  pattern="[0-9]*"
-  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-/>
+      <input type="tel" name="PhoneNum" placeholder="Phone Number (optional)" value="{{ old('PhoneNum') }}" />
 
       <select name="Gender">
           <option value="">Select Gender (optional)</option>
