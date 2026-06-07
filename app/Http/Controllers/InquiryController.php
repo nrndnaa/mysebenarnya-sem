@@ -348,14 +348,14 @@ class InquiryController extends Controller
             'evidence' => 'nullable|file|max:5120', // 5MB
         ]);
 
-        $inquiryID = 'IQ' . str_pad(DB::table('inquiry')->count() + 1, 5, '0', STR_PAD_LEFT);
+        $inquiryID = 'IQ' . str_pad(DB::table('inquiries')->count() + 1, 5, '0', STR_PAD_LEFT);
 
         $filePath = null;
         if ($request->hasFile('evidence')) {
             $filePath = $request->file('evidence')->store('evidence', 'public');
         }
 
-        DB::table('inquiry')->insert([
+        DB::table('inquiries')->insert([
             'InquiryID' => $inquiryID,
             'PublicID' => Auth::user()->publicUser->PublicID,
             'InquiryTitle' => $validated['subject'],

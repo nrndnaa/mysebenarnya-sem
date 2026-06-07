@@ -48,8 +48,9 @@
         <!-- Evidence Upload -->
         <div class="form-group">
             <label for="evidence">Upload Evidence (Optional):</label>
-            <input type="file" id="evidence" name="evidence" accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.zip">
+            <input type="file" id="evidence" name="evidence" accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.zip" onchange="validateFileSize(this)">
             <span class="file-note">Accepted formats: JPG, PNG, PDF, MP4, DOCX, ZIP. Max size: 5MB</span>
+            <small class="error" id="file-error" style="display:none; color:red;">File exceeds 5MB limit. Please upload a smaller file.</small>
             @error('evidence')
                 <small class="error">{{ $message }}</small>
             @enderror
@@ -69,6 +70,23 @@
 @push('scripts')
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function validateFileSize(input) {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const errorEl = document.getElementById('file-error');
+    const submitBtn = document.querySelector('.btn-submit');
+
+    if (input.files[0] && input.files[0].size > maxSize) {
+        errorEl.style.display = 'block';
+        submitBtn.disabled = true;
+        input.value = '';
+    } else {
+        errorEl.style.display = 'none';
+        submitBtn.disabled = false;
+    }
+}
+</script>
 
 @if(session('success'))
 <script>
