@@ -393,12 +393,19 @@ class InquiryAssignmentController extends Controller
      * Abort with 403 if the authenticated user is not an MCMC staff member.
      * Adjust the role/guard check to match your User model's role system.
      */
-    private function authorizeMcmc(): void
+   private function authorizeMcmc(): void
     {
         $user = Auth::user();
 
-        if (!$user || $user->role !== 'mcmc') {
-            abort(403, 'Unauthorized. MCMC access only.');
-        }
+        if (!$user) {
+        abort(403, 'Unauthorized. Please log in.');
+    }
+
+    // Gunakan huruf besar 'Role' mengikut fillable model User
+    $userRole = strtolower($user->Role); 
+
+    if ($userRole !== 'mcmc' && $userRole !== 'admin') {
+        abort(403, 'Unauthorized. MCMC access only.');
+    }
     }
 }
